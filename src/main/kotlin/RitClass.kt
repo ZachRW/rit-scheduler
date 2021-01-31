@@ -3,14 +3,29 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-data class RitClass(
-    val name: String,
-    val code: String,
+val dateFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy")
+
+class RitClass(
+    val fullName: String,
+    dateRangeStr: String,
     val enrollmentStatus: EnrollmentStatus,
-    val startDate: LocalDate,
-    val endDate: LocalDate,
     val dayTimes: List<DayTime>
-)
+) {
+    val name: String
+    val code: String
+    val startDate: LocalDate
+    val endDate: LocalDate
+
+    init {
+        val nameParts = fullName.split(" - ")
+        code = nameParts[0]
+        name = nameParts[1]
+
+        val (startDateStr, endDateStr) = dateRangeStr.split(" - ")
+        startDate = LocalDate.parse(startDateStr, dateFormat)
+        endDate = LocalDate.parse(endDateStr, dateFormat)
+    }
+}
 
 val timeFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("h:mma")
 

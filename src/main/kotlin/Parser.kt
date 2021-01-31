@@ -4,7 +4,7 @@ val table1Pattern = Regex("Status.*Deadlines")
 val table2Pattern = Regex("Class.*End Date")
 val timeRangePattern = Regex("\\d{2}/\\d{2}/\\d{4} - \\d{2}/\\d{2}/\\d{4}")
 
-fun parse(text: String) {
+fun parse(text: String): List<RitClass> {
     val lines = text.lines()
         .let { it.subList(46, it.size - 8) }
         .filter { it.isNotEmpty() }
@@ -13,13 +13,14 @@ fun parse(text: String) {
         .indexesOfAll { it.matches(table1Pattern) }
         .map { it - 1 }
 
+    val classes = mutableListOf<RitClass>()
     for (classLines in lines.splitAt(classStartLines)) {
-        parseClass(classLines)
-        println("-----Class end-----\n")
+        classes.add(parseClass(classLines))
     }
+    return classes
 }
 
-private fun parseClass(lines: List<String>) {
+private fun parseClass(lines: List<String>): RitClass {
     val name = lines[0]
     val status = getEnrollmentStatus(lines[2])
 
@@ -34,42 +35,28 @@ private fun parseClass(lines: List<String>) {
     val components = trimmedLines.splitAt(componentIndexes)
 
     val dateRange = components[0].last()
-    val startDate = dateRange.substring(0 until 10)
-    val endDate = dateRange.substring(13 until 23)
 
+    val dayTimes = mutableListOf<DayTime>()
     for (sectionLines in components) {
-        parseComponent(sectionLines)
-        println("-----Section end-----")
+        val dayTime = parseComponent(sectionLines)
+        if (dayTime != null) {
+            dayTimes.add(dayTime)
+        }
     }
-
-    println(
-        """
-        name: $name
-        status: $status
-        startDate: $startDate
-        endDate: $endDate
-    """.trimIndent()
-    )
+    return RitClass(name, dateRange, status, dayTimes)
 }
 
-private fun parseComponent(lines: List<String>) {
+private fun parseComponent(lines: List<String>): DayTime? {
     val dayTimeStr = lines[lines.size - 4]
     val location = lines[lines.size - 3]
 
     if (location == "Split component shows meetings") {
-        return
+        return null
     }
-
-    DayTime(dayTimeStr, location)
-
-    println(
-        """
-        dayTimeStr: $dayTimeStr
-        location: $location
-    """.trimIndent()
-    )
+    return DayTime(dayTimeStr, location)
 }
 
 fun main() {
-    parse(File("input.txt").readText())
+    val classes = parse(File("input.txt").readText())
+    println(classes)
 }
